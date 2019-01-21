@@ -21,7 +21,7 @@ For me, this project still needs further improvement which I plan to follow up a
 
 ![Sample Image 1][image1]
 
-__
+---
 
 
 ### Video Output
