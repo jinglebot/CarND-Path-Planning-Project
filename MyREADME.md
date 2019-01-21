@@ -2,8 +2,8 @@
 Self-Driving Car Engineer Nanodegree Program
    
 [//]: # (Media References)
-[image1]: ./media/img1.png
-[image2]: ./media/img2.png
+[image1]: ./media/img01.png "Best distance 27.71 mi"
+[image2]: ./media/img02.png "Best distance 33.01 mi"
 [video1]: ./media/vid1.mp4
 
 ### Simulators Used
@@ -19,8 +19,11 @@ I followed the Project Q&A to start and was able to get it to drive straight on 
 ### To Do
 For me, this project still needs further improvement which I plan to follow up after submission when there are no more time constraints from due dates. There are a lot of areas to cover and a lot of optimize. It is not yet a done deal.
 
-![image1] ![image2]
+![Sample Image 1][image1]
+
+---
+
 
 ### Video Output
 
-![Video link][video1]
+[![Video link][image2]][video1]
