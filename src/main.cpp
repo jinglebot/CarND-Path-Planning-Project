@@ -9,20 +9,11 @@
 #include "Eigen-3.3/Eigen/QR"
 #include "json.hpp"
 #include "spline.h"
+// #include "classifier.h"
+#include "vehicle.h"
+
 
 using namespace std;
-/*
-
-You get x,y and s,d values from localization
-which you then use in a spline to derive a curve equation (polynomial fit).
-Using anchor points, you solve for future x,y and s,d values
-that are within rules: speed < limit, within the lane, within acceleration limit, 
-keep a distance away from other cars
-
-
-*/
-
-
 
 // for convenience
 using json = nlohmann::json;
@@ -35,7 +26,9 @@ double rad2deg(double x) { return x * 180 / pi(); }
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
 // else the empty string "" will be returned.
-string hasData(string s) {
+string hasData(string s) 
+{
+
   auto found_null = s.find("null");
   auto b1 = s.find_first_of("[");
   auto b2 = s.find_first_of("}");
@@ -49,7 +42,7 @@ string hasData(string s) {
 
 double distance(double x1, double y1, double x2, double y2)
 {
-	return sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
+  return sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
 }
 
 int ClosestWaypoint(double x, double y, const vector<double> &maps_x, const vector<double> &maps_y)
@@ -86,23 +79,24 @@ int NextWaypoint(double x, double y, double theta, const vector<double> &maps_x,
 	double heading = atan2((map_y-y),(map_x-x));
 
 	double angle = fabs(theta-heading);
-  angle = min(2*pi() - angle, angle);
+	angle = min(2*pi() - angle, angle);
 
-  if(angle > pi()/4)
-  {
-    closestWaypoint++;
-  if (closestWaypoint == maps_x.size())
-  {
-    closestWaypoint = 0;
-  }
-  }
+	if(angle > pi()/4)
+	{
+		closestWaypoint++;
+		if (closestWaypoint == maps_x.size())
+		{
+			closestWaypoint = 0;
+		}
+	}
 
-  return closestWaypoint;
+	return closestWaypoint;
 }
 
 // Transform from Cartesian x,y coordinates to Frenet s,d coordinates
 vector<double> getFrenet(double x, double y, double theta, const vector<double> &maps_x, const vector<double> &maps_y)
 {
+
 	int next_wp = NextWaypoint(x,y, theta, maps_x,maps_y);
 
 	int prev_wp;
@@ -152,6 +146,7 @@ vector<double> getFrenet(double x, double y, double theta, const vector<double> 
 // Transform from Frenet s,d coordinates to Cartesian x,y
 vector<double> getXY(double s, double d, const vector<double> &maps_s, const vector<double> &maps_x, const vector<double> &maps_y)
 {
+
 	int prev_wp = -1;
 
 	while(s > maps_s[prev_wp+1] && (prev_wp < (int)(maps_s.size()-1) ))
@@ -177,25 +172,171 @@ vector<double> getXY(double s, double d, const vector<double> &maps_s, const vec
 
 }
 
+// ***************************************************
+// Classifier Loading
+// ***************************************************
 
+// I have wanted to add other vehicle predictions in this code but I did not have enough time to gather data
+// and information, and with the accuracy not really on the helpful level, I decided to skip it.
+// vector<vector<double> > Load_State(string file_name)
+// {
+//     ifstream in_state_(file_name.c_str(), ifstream::in);
+//     vector< vector<double >> state_out;
+//     string line;
+    
+    
+//     while (getline(in_state_, line)) 
+//     {
+//         istringstream iss(line);
+//     	vector<double> x_coord;
+    	
+//     	string token;
+//     	while( getline(iss,token,','))
+//     	{
+//     	    x_coord.push_back(stod(token));
+//     	}
+//     	state_out.push_back(x_coord);
+//     }
+//     return state_out;
+// }
+
+// vector<string> Load_Label(string file_name)
+// {
+//     ifstream in_label_(file_name.c_str(), ifstream::in);
+//     vector< string > label_out;
+//     string line;
+//     while (getline(in_label_, line)) 
+//     {
+//     	istringstream iss(line);
+//     	string label;
+// 	    iss >> label;
+    
+// 	    label_out.push_back(label);
+//     }
+//     return label_out;
+    
+// }
+
+//   Load classifier data
+//   void Load_classifier(GNB &gnb) {
+// 	vector< vector<double> > X_train = Load_State("../nd013_pred_data/train_states.txt");
+// 	vector< vector<double> > X_test  = Load_State("../nd013_pred_data/test_states.txt");
+// 	vector< string > Y_train  = Load_Label("../nd013_pred_data/train_labels.txt");
+// 	vector< string > Y_test   = Load_Label("../nd013_pred_data/test_labels.txt");
+    
+// 	cout << "X_train number of elements " << X_train.size() << endl;
+// 	cout << "X_train element size " << X_train[0].size() << endl;
+
+// 	gnb.train(X_train, Y_train);
+
+// 	int score = 0;
+// 	for(int i = 0; i < X_test.size(); i++)
+// 	{
+// 		vector<double> coords = X_test[i];
+// 		string predicted = gnb.predict(coords);
+// 		if(predicted.compare(Y_test[i]) == 0)
+// 		{
+// 			score += 1;
+// 		}
+// 	}
+
+// 	float fraction_correct = float(score) / Y_test.size();
+// 	cout << "Classifier score: " << (100*fraction_correct) << "%." << endl;
+//   }
 
 // *******************************************
 // LANE CHANGE
 // *******************************************
 
-void change_LEFT_lane (int& lane ) {
-	if (lane > 0) lane = 0 ;
+int car_is_in_lane(int d) {
+
+ 	if (d < 4 && d > 0 ) {
+		return 0;
+	} else if (d < 8 && d >= 4 ) {
+		return 1;
+	} else if (d < 12 && d >= 8 ) {
+		return 2;
+	}
+	return 0;
+
 }
 
-void change_RIGHT_lane (int& lane ) {
-	if (lane < 2) lane = 2 ;
+double get_v (double vx, double vy) 
+{
+
+	return sqrt(vx * vx + vy * vy);
+
+}
+
+double mph_to_mps(double v) 
+{
+
+	return v * 0.44704;
+
 }
 
 // *******************************************
+// COST FUNCTION
+// *******************************************
 
 
+double calculate_COST (Vehicle &possible_car_detected, Vehicle &ego, int new_LANE, double MAX_DIST, double MAX_VEL) 
+{
+
+    double stop_cost = 10.00;
+    double cost = 0.00;
+
+    // if slow vehicle is ahead of lane change gap
+    if ((possible_car_detected.s > ego.s) && ((possible_car_detected.s - ego.s) < MAX_DIST)) 
+    {
+
+    	// if it's fast, there's a low cost
+	    // if it's slow, there's a great cost
+         if (possible_car_detected.v < ego.v) 
+        {
+        
+            cost += stop_cost * (ego.v - possible_car_detected.v) / possible_car_detected.v;                   
+        
+        }
+    }
+
+    // if vehicle is within lane change gap
+    if ((fabs(possible_car_detected.s - ego.s) <= (MAX_DIST * 2)) && (new_LANE != ego.lane)) 
+    {
+    
+
+        cost += stop_cost;
+    
+    }
+
+    // if fast vehicle is behind lane change gap
+ 	if ((possible_car_detected.s < ego.s) && ((ego.s - possible_car_detected.s) < (MAX_DIST * 2))) 
+	{
+       
+       if (possible_car_detected.v > ego.v) 
+       {
+       
+            cost += stop_cost * (possible_car_detected.v - ego.v) / ego.v;                          	
+       
+       }
+
+	}
+    
+    // cost == 0 if there is no car in new lane or if car ahead in new lane is fast or car behind in new lane is slow
+
+	return cost;
+}
+						
+// *******************************************
+
+// At each timestep, ego can set acceleration to value between 
+double MAX_ACCEL = 0.224; // == 5 m/s^2
+double MAX_VEL = 49.75; // mph
+double DELTA_T = 0.02; // seconds
+double MAX_DIST = 30; // meters
 
 int main() {
+
   uWS::Hub h;
 
   // Load up map values for waypoint's x,y,s and d normalized normal vectors
@@ -232,11 +373,14 @@ int main() {
   	map_waypoints_dy.push_back(d_y);
   }
 
-  int lane = 1;
-  
-  double ref_vel = 0.0;
+  // Load classifier data
+  // GNB gnb = GNB();	
+  // Load_classifier(gnb);
 
-  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy,&lane,&ref_vel](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  // Initialize ego vehicle in lane 1, s starts at 0 m and initial vel is 0 mph)
+  Vehicle ego = Vehicle(1, 0.0, 0.0);
+			
+  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy,&ego](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -276,60 +420,187 @@ int main() {
 // *******************************************
 // START OF TODO LIST
 // *******************************************
-          
+         
             int prev_size = previous_path_x.size();
-
-// *******************************************
-// HOW NOT TO CRASH THE CAR IN FRONT OF YOU BY CHANGING TO LEFT/RIGHT LANE
-// *******************************************
-
-// SLOW DOWN, THEN SPEED UP OR MATCH OTHER CAR'S SPEED
-// CHANGE LANE TO NEXT ONE ON LEFT(SET AS PRIORITY)/RIGHT
-// CHECK IF THERE ARE OTHER CARS WITHIN +/- 30M IN THE NEXT LANE
-// IF LEFT LANE CHANGE IS NOT POSSIBLE, SHIFT RIGHT
-// READ FINITE STATE MACHINE AND SPLINE
-
-// PUT ALL EGO DATA IN VEHICLE CLASS
-// PUT ALL OTHER CARS DATA IN VEHICLE CLASS
-
-
-
-            if (prev_size > 0) {
-            	car_s = end_path_s;
+			
+			ego.s = car_s; 
+			
+			if (prev_size > 0) 
+			{
+				ego.s = end_path_s;
             }
+
+			ego.lane = car_is_in_lane(car_d);
+			
+			// CHECK
+			// cout << "Ego car\t";
+			// cout << "Lane: " << ego.lane << "\t";
+			// cout << "S: " << ego.s << "\t";
+			// cout << "V: " << ego.v << "\n";
 
             bool too_close = false;
+            bool change_LANE = false;
 
-            // find ref_v to use
-            for (int i = 0; i < sensor_fusion.size(); i++) {
-            	// car is in my lane
-            	float d = sensor_fusion[i][6];
-            	if (d < (2 + 4 * lane + 2) && d > (2 + 4 * lane - 2) ) {
-            		double vx = sensor_fusion[i][3];
-            		double vy = sensor_fusion[i][4];
-            		double check_speed = sqrt(vx * vx + vy * vy);
-            		double check_car_s = sensor_fusion[i][5];
+// *******************************************
+// NON - EGO VEHICLES
+// *******************************************
 
+			// place sensor_fusion vehicles in vehicles vector
+			map<int, Vehicle> vehicles;
+			for (int i = 0; i < sensor_fusion.size(); i++) 
+			{
+				int v_id = sensor_fusion[i][0];
+            	double vx = sensor_fusion[i][3];
+            	double vy = sensor_fusion[i][4];
+            	double vehicle_v = get_v (vx, vy);
 
-            		check_car_s += ((double)prev_size * 0.02 * check_speed); // if using previous points can project s value out
-            		// check s values greater than mine and s gap
-            		if ((check_car_s > car_s) && ((check_car_s - car_s) < 30) ) {
-            			too_close = true;
-            			// Change lanes
-            			change_LEFT_lane(lane);
-            		}
-            	}
-            }
+				double vehicle_s = sensor_fusion[i][5];
+				double vehicle_d = sensor_fusion[i][6];
+				int vehicle_lane = car_is_in_lane(vehicle_d);
 
-            if (too_close) {
+	            // CHECK
+	            // cout << "Car " << v_id << ":\t";
+				// cout << "Lane: " << vehicle_lane << "\t";
+				// cout << "S: " << vehicle_s << "\t";
+				// cout << "V " << vehicle_v << "\n";
+
+				Vehicle vehicle = Vehicle(vehicle_lane, vehicle_s, vehicle_v);
+              	vehicles[v_id] = vehicle;
+			}
+
+			// Future s for non-ego vehicles
+			// map<int,Vehicle > predictions;
+			// map<int, Vehicle>::iterator it = vehicles.begin();
+			// while(it != vehicles.end()) {
+		    //    int v_id = it->first;
+
+		    //    Vehicle preds = it->second.generate_predictions(prev_size, DELTA_T);
+            //	  predictions[v_id] = preds;
+		    // }
+
+// *******************************************
+// EGO VEHICLE
+// *******************************************
+
+			// Ego trajectory starts on finding out whether there is an obstacle ahead of it.
+			// If there is, ego computes the costs of each possible trajectory: staying on the lane, changing to the left lane or to the right.
+			// By comparing costs, ego decides which trajectory to take considering the state of the other vehicles in the environment.
+			// Calculating costs only happens when there is a decision to make, else the vehicle stays on its lane when current state is optimal. 
+            // sensor_fusion[0] id [1] x [2] y [3] vx [4] vy [5] s [6] d
+
+			Vehicle vehicle_ahead = Vehicle();
+			double cost_KEEP_lane = 0.00;
+			bool is_car_ahead = ego.get_vehicle(vehicles, ego, ego.lane, prev_size, DELTA_T, MAX_DIST, vehicle_ahead);
+			if (is_car_ahead) 
+			{
+				cost_KEEP_lane += calculate_COST (vehicle_ahead, ego, ego.lane, MAX_DIST, MAX_VEL);
+				cout << "cost_KEEP_lane: " << cost_KEEP_lane << endl;
+				too_close = true;
+            	change_LANE = true;
+			}
+
+            // Change lanes
+			if (change_LANE) {
+				bool change_LEFT_lane = true;
+				bool change_RIGHT_lane = true;
+			
+				double cost_LEFT_lane = 0.00;
+				double cost_RIGHT_lane = 0.00;
+
+// *******************************************
+// LEFT LANE CHANGING
+// *******************************************
+				
+				// Situation 1: If lane is already the innermost lane, no changing of lanes will occur.
+				// Situation 2: If there is a vehicle within the lane changing space of 30m ahead as well as behind the ego car, no changing of lanes can occur.
+				// Situation 3: If there is a vehicle ahead of the lane changing space and faster than ego car, changing of lanes can occur.
+				// Situation 4: If there is a vehicle behind the lane changing space and faster than ego car, changing of lanes cost will be evaluated.
+				// Situation 5: If there is a vehicle ahead of the lane changing space and slower than ego car, changing of lanes cost will be evaluated.
+				// Situation 6: If there is a vehicle behind the lane changing space and slower than ego car, changing of lanes can occur.
+				// Situation 7: If there is no vehicle in the new lane, changing of lanes cost will occur.
+				// Situation 8: Default ego car situation, no changing of lanes will occur.
+
+				int new_LANE = ego.lane - 1;
+				
+				if ( new_LANE < 0) {
+					change_LEFT_lane = false;
+					cost_LEFT_lane += 100;
+				} else {
+				    map<int, Vehicle>::iterator it = vehicles.begin();
+				    while(it != vehicles.end()) {
+				        int v_id = it->first;
+				        Vehicle possible_car_detected = it->second;
+				        if (possible_car_detected.lane == new_LANE) {
+
+				            // if using previous points can project s value out
+				            possible_car_detected.s += ((double)prev_size * DELTA_T * mph_to_mps(possible_car_detected.v));
+
+				            cost_LEFT_lane += calculate_COST (possible_car_detected, ego, new_LANE, MAX_DIST, MAX_VEL);
+        				}
+        				it++;
+    				}
+    			}
+				cout << "cost_LEFT_lane: " << cost_LEFT_lane << endl;
+
+// *******************************************
+// RIGHT LANE CHANGING
+// *******************************************
+				
+				new_LANE = ego.lane + 1;
+				Vehicle vehicle_on_right = Vehicle();
+				if (new_LANE > 2) {
+					change_RIGHT_lane = false;
+					cost_RIGHT_lane += 100;
+				} else {
+					bool is_car_on_right = ego.get_vehicle(vehicles, ego, new_LANE, prev_size, DELTA_T, MAX_DIST, vehicle_on_right);
+			
+				    map<int, Vehicle>::iterator it = vehicles.begin();
+				    while(it != vehicles.end()) {
+				        int v_id = it->first;
+				        Vehicle possible_car_detected = it->second;
+				        if (possible_car_detected.lane == new_LANE) {
+
+				            // if using previous points can project s value out
+				            possible_car_detected.s += ((double)prev_size * DELTA_T * mph_to_mps(possible_car_detected.v));
+
+				            cost_RIGHT_lane += calculate_COST (possible_car_detected, ego, new_LANE, MAX_DIST, MAX_VEL);
+        				}
+        				it++;
+    				}
+				}
+				cout << "cost_RIGHT_lane: " << cost_RIGHT_lane << endl;
+
+// *******************************************
+// LANE CHANGING DECISION MAKING
+// *******************************************
+				
+            	if (cost_LEFT_lane > cost_RIGHT_lane) {
+            		if (cost_KEEP_lane > cost_RIGHT_lane) {
+            			ego.prep_lane_change(vehicle_on_right, ego, MAX_ACCEL, MAX_DIST, MAX_VEL);
+            			ego.lane += 1;
+						cout << "CHANGE RIGHT LANE\n";
+            		} else
+            			cout << "KEEP LANE\n";
+            	} else if (cost_KEEP_lane > cost_LEFT_lane) {
+            		ego.lane -= 1;
+            		cout << "CHANGE LEFT LANE\n";
+            	} else
+            		cout << "KEEP LANE\n";
+			}
+
+            if (too_close ) {
             	// decrement to around 5 m/s2
-            	ref_vel -= 0.224;
+            	if (ego.v > vehicle_ahead.v)
+           			ego.v -= MAX_ACCEL;
+           		else
+           			ego.v = vehicle_ahead.v;
             } 
-            else if (ref_vel < 49.5) {
-            	ref_vel += 0.224;
+            else if (ego.v < MAX_VEL) {
+            	ego.v += MAX_ACCEL;
             }
 
-
+// *******************************************
+// TRAJECTORY
 // *******************************************
 
          	// Create a list of widely spaced (x,y) waypoints, evenly spaced at 30m
@@ -372,9 +643,9 @@ int main() {
             }
          
          	// In Frenet, add evenly 30m spaced points ahead of the starting reference
-            vector <double> next_wp0 = getXY(car_s+30, 2+4*lane, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-          	vector <double> next_wp1 = getXY(car_s+60, 2+4*lane, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-          	vector <double> next_wp2 = getXY(car_s+90, 2+4*lane, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+            vector <double> next_wp0 = getXY(ego.s+30, 2+4*ego.lane, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+          	vector <double> next_wp1 = getXY(ego.s+60, 2+4*ego.lane, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+          	vector <double> next_wp2 = getXY(ego.s+90, 2+4*ego.lane, map_waypoints_s, map_waypoints_x, map_waypoints_y);
             
           	ptsx.push_back(next_wp0[0]);
        		ptsx.push_back(next_wp1[0]);
@@ -414,10 +685,11 @@ int main() {
               	  next_x_vals.push_back(previous_path_x[i]);
                   next_y_vals.push_back(previous_path_y[i]);
             }
-            cout << "previous_path_x size: " << previous_path_x.size() << endl;
+            // return {next_x_vals, next_y_vals};
+            // cout << "previous_path_x size: " << previous_path_x.size() << endl;
           
           	// Calculate how to break up spline points so that we travel at our desired reference velocity
-          	double target_x = 30.0;
+          	double target_x = 30.0; // in meters of spaced points
           	double target_y = s(target_x);
           	double target_dist = sqrt((target_x) * (target_x) + (target_y) * (target_y));
           
@@ -426,8 +698,8 @@ int main() {
           	// Fill up the rest of our path planner after filling it with previous points, here we will always output 50 points
             for (int i = 1; i <= 50 - previous_path_x.size(); i++) {
 
-              	double N = (target_dist/(0.02 * ref_vel/2.24)); // convert to mps
-              	cout << "N: " << N << endl;
+              	double N = (target_dist/(0.02 * ego.v/2.24)); // convert to mps
+              	// cout << "N: " << N << endl;
               	double x_point = x_add_on + (target_x)/N;
               	double y_point = s(x_point);
               
@@ -450,7 +722,7 @@ int main() {
 // *******************************************
 // END OF TODO LIST
 // *******************************************
-          
+
           	json msgJson;
           	msgJson["next_x"] = next_x_vals;
           	msgJson["next_y"] = next_y_vals;
