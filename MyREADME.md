@@ -4,7 +4,7 @@ Self-Driving Car Engineer Nanodegree Program
 [//]: # (Media References)
 [image1]: ./media/img01.png "Best distance 27.71 mi"
 [image2]: ./media/img02.png "Best distance 33.01 mi"
-[video1]: media/vid1.mp4
+[video1]: ./media/vid1.mp4
 
 ### Simulators Used
 At first, I tried using the Udacity Workspace for this project. I had to drop it and switch to Docker on my local PC due to several reasons:
@@ -21,8 +21,9 @@ For me, this project still needs further improvement which I plan to follow up a
 
 ![Sample Image 1][image1]
 
-![Sample Image 2][image2]
+__
+
 
 ### Video Output
 
-![Video link][video1]
+[![Video link][image2]][video1]
