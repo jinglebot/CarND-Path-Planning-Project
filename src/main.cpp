@@ -9,7 +9,6 @@
 #include "Eigen-3.3/Eigen/QR"
 #include "json.hpp"
 #include "spline.h"
-// #include "classifier.h"
 #include "vehicle.h"
 
 
@@ -172,78 +171,6 @@ vector<double> getXY(double s, double d, const vector<double> &maps_s, const vec
 
 }
 
-// ***************************************************
-// Classifier Loading
-// ***************************************************
-
-// I have wanted to add other vehicle predictions in this code but I did not have enough time to gather data
-// and information, and with the accuracy not really on the helpful level, I decided to skip it.
-// vector<vector<double> > Load_State(string file_name)
-// {
-//     ifstream in_state_(file_name.c_str(), ifstream::in);
-//     vector< vector<double >> state_out;
-//     string line;
-    
-    
-//     while (getline(in_state_, line)) 
-//     {
-//         istringstream iss(line);
-//     	vector<double> x_coord;
-    	
-//     	string token;
-//     	while( getline(iss,token,','))
-//     	{
-//     	    x_coord.push_back(stod(token));
-//     	}
-//     	state_out.push_back(x_coord);
-//     }
-//     return state_out;
-// }
-
-// vector<string> Load_Label(string file_name)
-// {
-//     ifstream in_label_(file_name.c_str(), ifstream::in);
-//     vector< string > label_out;
-//     string line;
-//     while (getline(in_label_, line)) 
-//     {
-//     	istringstream iss(line);
-//     	string label;
-// 	    iss >> label;
-    
-// 	    label_out.push_back(label);
-//     }
-//     return label_out;
-    
-// }
-
-//   Load classifier data
-//   void Load_classifier(GNB &gnb) {
-// 	vector< vector<double> > X_train = Load_State("../nd013_pred_data/train_states.txt");
-// 	vector< vector<double> > X_test  = Load_State("../nd013_pred_data/test_states.txt");
-// 	vector< string > Y_train  = Load_Label("../nd013_pred_data/train_labels.txt");
-// 	vector< string > Y_test   = Load_Label("../nd013_pred_data/test_labels.txt");
-    
-// 	cout << "X_train number of elements " << X_train.size() << endl;
-// 	cout << "X_train element size " << X_train[0].size() << endl;
-
-// 	gnb.train(X_train, Y_train);
-
-// 	int score = 0;
-// 	for(int i = 0; i < X_test.size(); i++)
-// 	{
-// 		vector<double> coords = X_test[i];
-// 		string predicted = gnb.predict(coords);
-// 		if(predicted.compare(Y_test[i]) == 0)
-// 		{
-// 			score += 1;
-// 		}
-// 	}
-
-// 	float fraction_correct = float(score) / Y_test.size();
-// 	cout << "Classifier score: " << (100*fraction_correct) << "%." << endl;
-//   }
-
 // *******************************************
 // LANE CHANGE
 // *******************************************
@@ -333,7 +260,7 @@ double calculate_COST (Vehicle &possible_car_detected, Vehicle &ego, int new_LAN
 double MAX_ACCEL = 0.224; // == 5 m/s^2
 double MAX_VEL = 49.75; // mph
 double DELTA_T = 0.02; // seconds
-double MAX_DIST = 30; // meters
+double MAX_DIST = 50; // meters
 
 int main() {
 
@@ -372,10 +299,6 @@ int main() {
   	map_waypoints_dx.push_back(d_x);
   	map_waypoints_dy.push_back(d_y);
   }
-
-  // Load classifier data
-  // GNB gnb = GNB();	
-  // Load_classifier(gnb);
 
   // Initialize ego vehicle in lane 1, s starts at 0 m and initial vel is 0 mph)
   Vehicle ego = Vehicle(1, 0.0, 0.0);
@@ -416,6 +339,11 @@ int main() {
 
           	// Sensor Fusion Data, a list of all other cars on the same side of the road. vector < vector <double> >
           	auto sensor_fusion = j[1]["sensor_fusion"];
+
+          	// Define the actual (x,y) points we will use for the planner
+          	vector<double> next_x_vals;
+          	vector<double> next_y_vals;
+
 
 // *******************************************
 // START OF TODO LIST
@@ -576,7 +504,6 @@ int main() {
 				
             	if (cost_LEFT_lane > cost_RIGHT_lane) {
             		if (cost_KEEP_lane > cost_RIGHT_lane) {
-            			ego.prep_lane_change(vehicle_on_right, ego, MAX_ACCEL, MAX_DIST, MAX_VEL);
             			ego.lane += 1;
 						cout << "CHANGE RIGHT LANE\n";
             		} else
@@ -672,14 +599,7 @@ int main() {
           
           	// set (x,y) points to the spline
           	s.set_points(ptsx,ptsy);
-          
-// *********************************************************
-          
-          	// Define the actual (x,y) points we will use for the planner
-          	vector<double> next_x_vals;
-          	vector<double> next_y_vals;
-          	
-// *********************************************************
+                    	
           	// Start with all of the previous path points from last time
             for (int i = 0; i < previous_path_x.size(); i++) {
               	  next_x_vals.push_back(previous_path_x[i]);
