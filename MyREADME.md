@@ -19,8 +19,9 @@ I followed the Project Q&A to start and was able to get it to drive straight on 
 ### To Do
 For me, this project still needs further improvement which I plan to follow up after submission when there are no more time constraints from due dates. There are a lot of areas to cover and a lot of optimize. It is not yet a done deal.
 
+<object width="425" height="350">
 ![Sample Image 1][image1]
-
+</object>
 ---
 
 
