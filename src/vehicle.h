@@ -67,6 +67,15 @@ public:
   void implement_trajectory(map<int, Vehicle> &vehicles, Vehicle &ego, string state);
 
   void implement_trajectory_KL(map<int, Vehicle> &vehicles, Vehicle &ego);
+  
+  void implement_trajectory_PCLL(map<int, Vehicle> &vehicles, Vehicle &ego);
+  
+  void implement_trajectory_CLL(map<int, Vehicle> &vehicles, Vehicle &ego);
+  
+  void implement_trajectory_PCLR(map<int, Vehicle> &vehicles, Vehicle &ego);
+  
+  void implement_trajectory_CLR(map<int, Vehicle> &vehicles, Vehicle &ego);
+
 };
 
 #endif
