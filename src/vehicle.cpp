@@ -268,46 +268,48 @@ void Vehicle::implement_trajectory(map<int, Vehicle> &vehicles, Vehicle &ego, st
     if (index != poss_states.size()) {
         switch (index) {
            case 1 :
+//                 if (ego.v < MAX_VEL) 
+//                     ego.v += ego.a;
+//                 else
+//                     ego.v -= ego.a;
+//                 ego.lane -= 1;
                 cout << "Now state: " << poss_states[1] << endl;
-                if (ego.v < MAX_VEL) 
-                    ego.v += ego.a;
-                else
-                    ego.v -= ego.a;
-                ego.lane -= 1;
                 implement_trajectory_KL(vehicles, ego);
                 break;
             case 2 :
+//                 ego.lane -= 1;
+//                 if (ego.v < MAX_VEL) 
+//                     ego.v += ego.a;
+//                 else
+//                     ego.v -= ego.a;
                 cout << "Now state: " << poss_states[2] << endl;
-                ego.lane -= 1;
-                if (ego.v < MAX_VEL) 
-                    ego.v += ego.a;
-                else
-                    ego.v -= ego.a;
-
+                implement_trajectory_KL(vehicles, ego);
                 break;
             case 3 :
+//                 if (ego.v < MAX_VEL) 
+//                     ego.v += ego.a;
+//                 else
+//                     ego.v -= ego.a;
+//                 ego.lane += 1;
                 cout << "Now state: " << poss_states[3] << endl;
-                if (ego.v < MAX_VEL) 
-                    ego.v += ego.a;
-                else
-                    ego.v -= ego.a;
-                ego.lane += 1;
                 implement_trajectory_KL(vehicles, ego);
                 break;
             case 4 :
-                if (ego.v < MAX_VEL) 
-                    ego.v += ego.a;
-                else
-                    ego.v -= ego.a;
+//                 if (ego.v < MAX_VEL) 
+//                     ego.v += ego.a;
+//                 else
+//                     ego.v -= ego.a;
+//                 cout << "Now state: " << poss_states[4] << endl;
+//                 ego.lane += 1;
                 cout << "Now state: " << poss_states[4] << endl;
-                ego.lane += 1;
+                implement_trajectory_KL(vehicles, ego);
                 break;
             default:
-                    if (ego.v < MAX_VEL) 
-                    ego.v += ego.a;
-                else
-                    ego.v -= ego.a;
-            cout << "Now state: " << poss_states[0] << endl;
+//                 if (ego.v < MAX_VEL) 
+//                     ego.v += ego.a;
+//                 else
+//                     ego.v -= ego.a;
+                cout << "Now state: " << poss_states[0] << endl;
                 implement_trajectory_KL(vehicles, ego);
          }
     }
@@ -331,6 +333,12 @@ void Vehicle::implement_trajectory_KL(map<int, Vehicle> &vehicles, Vehicle &ego)
             ego.v -= ego.a;
     } 
 }
+
+void Vehicle::implement_trajectory_PCLL(map<int, Vehicle> &vehicles, Vehicle &ego) {}
+void Vehicle::implement_trajectory_CLL(map<int, Vehicle> &vehicles, Vehicle &ego) {}
+void Vehicle::implement_trajectory_PCLR(map<int, Vehicle> &vehicles, Vehicle &ego) {}
+void Vehicle::implement_trajectory_CLR(map<int, Vehicle> &vehicles, Vehicle &ego) {}
+
 
 // =========================================================================
 // =========================================================================
