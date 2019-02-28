@@ -10,258 +10,251 @@
 #include "json.hpp"
 #include "spline.h"
 #include "vehicle.h"
-
+#include "helper.h"
 
 using namespace std;
+
 
 // for convenience
 using json = nlohmann::json;
 
-// For converting back and forth between radians and degrees.
-constexpr double pi() { return M_PI; }
-double deg2rad(double x) { return x * pi() / 180; }
-double rad2deg(double x) { return x * 180 / pi(); }
+// // For converting back and forth between radians and degrees.
+// constexpr double pi() { return M_PI; }
+// double deg2rad(double x) { return x * pi() / 180; }
+// double rad2deg(double x) { return x * 180 / pi(); }
 
-// Checks if the SocketIO event has JSON data.
-// If there is data the JSON object in string format will be returned,
-// else the empty string "" will be returned.
-string hasData(string s) 
-{
+// // Checks if the SocketIO event has JSON data.
+// // If there is data the JSON object in string format will be returned,
+// // else the empty string "" will be returned.
+// string hasData(string s) 
+// {
 
-  auto found_null = s.find("null");
-  auto b1 = s.find_first_of("[");
-  auto b2 = s.find_first_of("}");
-  if (found_null != string::npos) {
-    return "";
-  } else if (b1 != string::npos && b2 != string::npos) {
-    return s.substr(b1, b2 - b1 + 2);
-  }
-  return "";
-}
+//   auto found_null = s.find("null");
+//   auto b1 = s.find_first_of("[");
+//   auto b2 = s.find_first_of("}");
+//   if (found_null != string::npos) {
+//     return "";
+//   } else if (b1 != string::npos && b2 != string::npos) {
+//     return s.substr(b1, b2 - b1 + 2);
+//   }
+//   return "";
+// }
 
-double distance(double x1, double y1, double x2, double y2)
-{
-  return sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
-}
+// double distance(double x1, double y1, double x2, double y2)
+// {
+//   return sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
+// }
 
-int ClosestWaypoint(double x, double y, const vector<double> &maps_x, const vector<double> &maps_y)
-{
+// int ClosestWaypoint(double x, double y, const vector<double> &maps_x, const vector<double> &maps_y)
+// {
 
-	double closestLen = 100000; //large number
-	int closestWaypoint = 0;
+// 	double closestLen = 100000; //large number
+// 	int closestWaypoint = 0;
 
-	for(int i = 0; i < maps_x.size(); i++)
-	{
-		double map_x = maps_x[i];
-		double map_y = maps_y[i];
-		double dist = distance(x,y,map_x,map_y);
-		if(dist < closestLen)
-		{
-			closestLen = dist;
-			closestWaypoint = i;
-		}
+// 	for(int i = 0; i < maps_x.size(); i++)
+// 	{
+// 		double map_x = maps_x[i];
+// 		double map_y = maps_y[i];
+// 		double dist = distance(x,y,map_x,map_y);
+// 		if(dist < closestLen)
+// 		{
+// 			closestLen = dist;
+// 			closestWaypoint = i;
+// 		}
 
-	}
+// 	}
 
-	return closestWaypoint;
+// 	return closestWaypoint;
 
-}
+// }
 
-int NextWaypoint(double x, double y, double theta, const vector<double> &maps_x, const vector<double> &maps_y)
-{
+// int NextWaypoint(double x, double y, double theta, const vector<double> &maps_x, const vector<double> &maps_y)
+// {
 
-	int closestWaypoint = ClosestWaypoint(x,y,maps_x,maps_y);
+// 	int closestWaypoint = ClosestWaypoint(x,y,maps_x,maps_y);
 
-	double map_x = maps_x[closestWaypoint];
-	double map_y = maps_y[closestWaypoint];
+// 	double map_x = maps_x[closestWaypoint];
+// 	double map_y = maps_y[closestWaypoint];
 
-	double heading = atan2((map_y-y),(map_x-x));
+// 	double heading = atan2((map_y-y),(map_x-x));
 
-	double angle = fabs(theta-heading);
-	angle = min(2*pi() - angle, angle);
+// 	double angle = fabs(theta-heading);
+// 	angle = min(2*pi() - angle, angle);
 
-	if(angle > pi()/4)
-	{
-		closestWaypoint++;
-		if (closestWaypoint == maps_x.size())
-		{
-			closestWaypoint = 0;
-		}
-	}
+// 	if(angle > pi()/4)
+// 	{
+// 		closestWaypoint++;
+// 		if (closestWaypoint == maps_x.size())
+// 		{
+// 			closestWaypoint = 0;
+// 		}
+// 	}
 
-	return closestWaypoint;
-}
+// 	return closestWaypoint;
+// }
 
-// Transform from Cartesian x,y coordinates to Frenet s,d coordinates
-vector<double> getFrenet(double x, double y, double theta, const vector<double> &maps_x, const vector<double> &maps_y)
-{
+// // Transform from Cartesian x,y coordinates to Frenet s,d coordinates
+// vector<double> getFrenet(double x, double y, double theta, const vector<double> &maps_x, const vector<double> &maps_y)
+// {
 
-	int next_wp = NextWaypoint(x,y, theta, maps_x,maps_y);
+// 	int next_wp = NextWaypoint(x,y, theta, maps_x,maps_y);
 
-	int prev_wp;
-	prev_wp = next_wp-1;
-	if(next_wp == 0)
-	{
-		prev_wp  = maps_x.size()-1;
-	}
+// 	int prev_wp;
+// 	prev_wp = next_wp-1;
+// 	if(next_wp == 0)
+// 	{
+// 		prev_wp  = maps_x.size()-1;
+// 	}
 
-	double n_x = maps_x[next_wp]-maps_x[prev_wp];
-	double n_y = maps_y[next_wp]-maps_y[prev_wp];
-	double x_x = x - maps_x[prev_wp];
-	double x_y = y - maps_y[prev_wp];
+// 	double n_x = maps_x[next_wp]-maps_x[prev_wp];
+// 	double n_y = maps_y[next_wp]-maps_y[prev_wp];
+// 	double x_x = x - maps_x[prev_wp];
+// 	double x_y = y - maps_y[prev_wp];
 
-	// find the projection of x onto n
-	double proj_norm = (x_x*n_x+x_y*n_y)/(n_x*n_x+n_y*n_y);
-	double proj_x = proj_norm*n_x;
-	double proj_y = proj_norm*n_y;
+// 	// find the projection of x onto n
+// 	double proj_norm = (x_x*n_x+x_y*n_y)/(n_x*n_x+n_y*n_y);
+// 	double proj_x = proj_norm*n_x;
+// 	double proj_y = proj_norm*n_y;
 
-	double frenet_d = distance(x_x,x_y,proj_x,proj_y);
+// 	double frenet_d = distance(x_x,x_y,proj_x,proj_y);
 
-	//see if d value is positive or negative by comparing it to a center point
+// 	//see if d value is positive or negative by comparing it to a center point
 
-	double center_x = 1000-maps_x[prev_wp];
-	double center_y = 2000-maps_y[prev_wp];
-	double centerToPos = distance(center_x,center_y,x_x,x_y);
-	double centerToRef = distance(center_x,center_y,proj_x,proj_y);
+// 	double center_x = 1000-maps_x[prev_wp];
+// 	double center_y = 2000-maps_y[prev_wp];
+// 	double centerToPos = distance(center_x,center_y,x_x,x_y);
+// 	double centerToRef = distance(center_x,center_y,proj_x,proj_y);
 
-	if(centerToPos <= centerToRef)
-	{
-		frenet_d *= -1;
-	}
+// 	if(centerToPos <= centerToRef)
+// 	{
+// 		frenet_d *= -1;
+// 	}
 
-	// calculate s value
-	double frenet_s = 0;
-	for(int i = 0; i < prev_wp; i++)
-	{
-		frenet_s += distance(maps_x[i],maps_y[i],maps_x[i+1],maps_y[i+1]);
-	}
+// 	// calculate s value
+// 	double frenet_s = 0;
+// 	for(int i = 0; i < prev_wp; i++)
+// 	{
+// 		frenet_s += distance(maps_x[i],maps_y[i],maps_x[i+1],maps_y[i+1]);
+// 	}
 
-	frenet_s += distance(0,0,proj_x,proj_y);
+// 	frenet_s += distance(0,0,proj_x,proj_y);
 
-	return {frenet_s,frenet_d};
+// 	return {frenet_s,frenet_d};
 
-}
+// }
 
-// Transform from Frenet s,d coordinates to Cartesian x,y
-vector<double> getXY(double s, double d, const vector<double> &maps_s, const vector<double> &maps_x, const vector<double> &maps_y)
-{
+// // Transform from Frenet s,d coordinates to Cartesian x,y
+// vector<double> getXY(double s, double d, const vector<double> &maps_s, const vector<double> &maps_x, const vector<double> &maps_y)
+// {
 
-	int prev_wp = -1;
+// 	int prev_wp = -1;
 
-	while(s > maps_s[prev_wp+1] && (prev_wp < (int)(maps_s.size()-1) ))
-	{
-		prev_wp++;
-	}
+// 	while(s > maps_s[prev_wp+1] && (prev_wp < (int)(maps_s.size()-1) ))
+// 	{
+// 		prev_wp++;
+// 	}
 
-	int wp2 = (prev_wp+1)%maps_x.size();
+// 	int wp2 = (prev_wp+1)%maps_x.size();
 
-	double heading = atan2((maps_y[wp2]-maps_y[prev_wp]),(maps_x[wp2]-maps_x[prev_wp]));
-	// the x,y,s along the segment
-	double seg_s = (s-maps_s[prev_wp]);
+// 	double heading = atan2((maps_y[wp2]-maps_y[prev_wp]),(maps_x[wp2]-maps_x[prev_wp]));
+// 	// the x,y,s along the segment
+// 	double seg_s = (s-maps_s[prev_wp]);
 
-	double seg_x = maps_x[prev_wp]+seg_s*cos(heading);
-	double seg_y = maps_y[prev_wp]+seg_s*sin(heading);
+// 	double seg_x = maps_x[prev_wp]+seg_s*cos(heading);
+// 	double seg_y = maps_y[prev_wp]+seg_s*sin(heading);
 
-	double perp_heading = heading-pi()/2;
+// 	double perp_heading = heading-pi()/2;
 
-	double x = seg_x + d*cos(perp_heading);
-	double y = seg_y + d*sin(perp_heading);
+// 	double x = seg_x + d*cos(perp_heading);
+// 	double y = seg_y + d*sin(perp_heading);
 
-	return {x,y};
+// 	return {x,y};
 
-}
+// }
 
-// *******************************************
-// LANE CHANGE
-// *******************************************
+// // *******************************************
+// // LANE CHANGE
+// // *******************************************
 
-int car_is_in_lane(int d) {
+// int car_is_in_lane(int d) {
 
- 	if (d < 4 && d > 0 ) {
-		return 0;
-	} else if (d < 8 && d >= 4 ) {
-		return 1;
-	} else if (d < 12 && d >= 8 ) {
-		return 2;
-	}
-	return 0;
+//  	if (d < 4 && d > 0 ) {
+// 		return 0;
+// 	} else if (d < 8 && d >= 4 ) {
+// 		return 1;
+// 	} else if (d < 12 && d >= 8 ) {
+// 		return 2;
+// 	}
+// 	return 0;
 
-}
+// }
 
-double get_v (double vx, double vy) 
-{
+// double get_v (double vx, double vy) 
+// {
 
-	return sqrt(vx * vx + vy * vy);
+// 	return sqrt(vx * vx + vy * vy);
 
-}
+// }
 
-double mph_to_mps(double v) 
-{
+// double mph_to_mps(double v) 
+// {
 
-	return v * 0.44704;
+// 	return v * 0.44704;
 
-}
+// }
 
 // *******************************************
 // COST FUNCTION
 // *******************************************
 
 
-double calculate_COST (Vehicle &possible_car_detected, Vehicle &ego, int new_LANE, double MAX_DIST, double MAX_VEL) 
-{
+// double calculate_COST (Vehicle &possible_car_detected, Vehicle &ego, int new_LANE, double MAX_DIST, double MAX_VEL) 
+// {
 
-    double stop_cost = 10.00;
-    double cost = 0.00;
+//     double stop_cost = 10.00;
+//     double cost = 0.00;
 
-    // if slow vehicle is ahead of lane change gap
-    if ((possible_car_detected.s > ego.s) && ((possible_car_detected.s - ego.s) < MAX_DIST)) 
-    {
+//     // if slow vehicle is ahead of lane change gap
+//     if ((possible_car_detected.s > ego.s) && ((possible_car_detected.s - ego.s) < MAX_DIST)) 
+//     {
 
-    	// if it's fast, there's a low cost
-	    // if it's slow, there's a great cost
-         if (possible_car_detected.v < ego.v) 
-        {
+//     	// if it's fast, there's a low cost
+// 	    // if it's slow, there's a great cost
+//          if (possible_car_detected.v < ego.v) 
+//         {
         
-            cost += stop_cost * (ego.v - possible_car_detected.v) / possible_car_detected.v;                   
+//             cost += stop_cost * (ego.v - possible_car_detected.v) / possible_car_detected.v;                   
         
-        }
-    }
+//         }
+//     }
 
-    // if vehicle is within lane change gap
-    if ((fabs(possible_car_detected.s - ego.s) <= (MAX_DIST * 2)) && (new_LANE != ego.lane)) 
-    {
+//     // if vehicle is within lane change gap
+//     if ((fabs(possible_car_detected.s - ego.s) <= (MAX_DIST * 2)) && (new_LANE != ego.lane)) 
+//     {
     
 
-        cost += stop_cost;
+//         cost += stop_cost;
     
-    }
+//     }
 
-    // if fast vehicle is behind lane change gap
- 	if ((possible_car_detected.s < ego.s) && ((ego.s - possible_car_detected.s) < (MAX_DIST * 2))) 
-	{
+//     // if fast vehicle is behind lane change gap
+//  	if ((possible_car_detected.s < ego.s) && ((ego.s - possible_car_detected.s) < (MAX_DIST * 2))) 
+// 	{
        
-       if (possible_car_detected.v > ego.v) 
-       {
+//        if (possible_car_detected.v > ego.v) 
+//        {
        
-            cost += stop_cost * (possible_car_detected.v - ego.v) / ego.v;                          	
+//             cost += stop_cost * (possible_car_detected.v - ego.v) / ego.v;                          	
        
-       }
+//        }
 
-	}
+// 	}
     
-    // cost == 0 if there is no car in new lane or if car ahead in new lane is fast or car behind in new lane is slow
+//     // cost == 0 if there is no car in new lane or if car ahead in new lane is fast or car behind in new lane is slow
 
-	return cost;
-}
+// 	return cost;
+// }
 						
-// *******************************************
-
-// At each timestep, ego can set acceleration to value between 
-double MAX_ACCEL = 0.224; // == 5 m/s^2
-double MAX_VEL = 49.75; // mph
-double DELTA_T = 0.02; // seconds
-double MAX_DIST = 50; // meters
-
 int main() {
 
   uWS::Hub h;
@@ -301,7 +294,7 @@ int main() {
   }
 
   // Initialize ego vehicle in lane 1, s starts at 0 m and initial vel is 0 mph)
-  Vehicle ego = Vehicle(1, 0.0, 0.0);
+  Vehicle ego = Vehicle(1, 0.0, 0, 6, MAX_ACCEL, "KL");
 			
   h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy,&ego](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
@@ -352,22 +345,11 @@ int main() {
             int prev_size = previous_path_x.size();
 			
 			ego.s = car_s; 
-			
-			if (prev_size > 0) 
-			{
-				ego.s = end_path_s;
-            }
-
+			ego.d = car_d; 
 			ego.lane = car_is_in_lane(car_d);
 			
-			// CHECK
-			// cout << "Ego car\t";
-			// cout << "Lane: " << ego.lane << "\t";
-			// cout << "S: " << ego.s << "\t";
-			// cout << "V: " << ego.v << "\n";
-
-            bool too_close = false;
-            bool change_LANE = false;
+            // bool too_close = false;
+            // bool change_LANE = false;
 
 // *******************************************
 // NON - EGO VEHICLES
@@ -386,54 +368,51 @@ int main() {
 				double vehicle_d = sensor_fusion[i][6];
 				int vehicle_lane = car_is_in_lane(vehicle_d);
 
-	            // CHECK
-	            // cout << "Car " << v_id << ":\t";
-				// cout << "Lane: " << vehicle_lane << "\t";
-				// cout << "S: " << vehicle_s << "\t";
-				// cout << "V " << vehicle_v << "\n";
-
-				Vehicle vehicle = Vehicle(vehicle_lane, vehicle_s, vehicle_v);
+				Vehicle vehicle = Vehicle(vehicle_lane, vehicle_s, vehicle_v, vehicle_d);
               	vehicles[v_id] = vehicle;
 			}
 
-			// Future s for non-ego vehicles
-			// map<int,Vehicle > predictions;
-			// map<int, Vehicle>::iterator it = vehicles.begin();
-			// while(it != vehicles.end()) {
-		    //    int v_id = it->first;
+			// Vehicles default
+			Vehicle vehicle = Vehicle(1, 500, MAX_VEL, 6);
+			vehicles[-1] = vehicle;
 
-		    //    Vehicle preds = it->second.generate_predictions(prev_size, DELTA_T);
-            //	  predictions[v_id] = preds;
-		    // }
-
+			// Vehicles visualization
+			ego.see_vehicles(vehicles, ego);
+			ego.transition_function(vehicles, ego);
+			
 // *******************************************
 // EGO VEHICLE
 // *******************************************
+			// if (prev_size > 0) 
+			// {
+			// 	ego.s = end_path_s;
+   //          }
 
+			// Find and complete and optimal motion planning system.
 			// Ego trajectory starts on finding out whether there is an obstacle ahead of it.
 			// If there is, ego computes the costs of each possible trajectory: staying on the lane, changing to the left lane or to the right.
 			// By comparing costs, ego decides which trajectory to take considering the state of the other vehicles in the environment.
 			// Calculating costs only happens when there is a decision to make, else the vehicle stays on its lane when current state is optimal. 
             // sensor_fusion[0] id [1] x [2] y [3] vx [4] vy [5] s [6] d
 
-			Vehicle vehicle_ahead = Vehicle();
-			double cost_KEEP_lane = 0.00;
-			bool is_car_ahead = ego.get_vehicle(vehicles, ego, ego.lane, prev_size, DELTA_T, MAX_DIST, vehicle_ahead);
-			if (is_car_ahead) 
-			{
-				cost_KEEP_lane += calculate_COST (vehicle_ahead, ego, ego.lane, MAX_DIST, MAX_VEL);
-				cout << "cost_KEEP_lane: " << cost_KEEP_lane << endl;
-				too_close = true;
-            	change_LANE = true;
-			}
+			// Vehicle vehicle_ahead = Vehicle();
+			// double cost_KEEP_lane = 0.00;
+			// bool is_car_ahead = ego.get_vehicle(vehicles, ego, ego.lane, prev_size, DELTA_T, MAX_DIST, vehicle_ahead);
+			// if (is_car_ahead) 
+			// {
+			// 	cost_KEEP_lane += calculate_COST (vehicle_ahead, ego, ego.lane, MAX_DIST, MAX_VEL);
+			// 	// cout << "cost_KEEP_lane: " << cost_KEEP_lane << endl;
+			// 	too_close = true;
+   //          	change_LANE = true;
+			// }
 
-            // Change lanes
-			if (change_LANE) {
-				bool change_LEFT_lane = true;
-				bool change_RIGHT_lane = true;
+   //          // Change lanes
+			// if (change_LANE) {
+			// 	bool change_LEFT_lane = true;
+			// 	bool change_RIGHT_lane = true;
 			
-				double cost_LEFT_lane = 0.00;
-				double cost_RIGHT_lane = 0.00;
+			// 	double cost_LEFT_lane = 0.00;
+			// 	double cost_RIGHT_lane = 0.00;
 
 // *******************************************
 // LEFT LANE CHANGING
@@ -448,83 +427,87 @@ int main() {
 				// Situation 7: If there is no vehicle in the new lane, changing of lanes cost will occur.
 				// Situation 8: Default ego car situation, no changing of lanes will occur.
 
-				int new_LANE = ego.lane - 1;
+				// int new_LANE = ego.lane - 1;
 				
-				if ( new_LANE < 0) {
-					change_LEFT_lane = false;
-					cost_LEFT_lane += 100;
-				} else {
-				    map<int, Vehicle>::iterator it = vehicles.begin();
-				    while(it != vehicles.end()) {
-				        int v_id = it->first;
-				        Vehicle possible_car_detected = it->second;
-				        if (possible_car_detected.lane == new_LANE) {
+				// if ( new_LANE < 0) {
+				// 	change_LEFT_lane = false;
+				// 	cost_LEFT_lane += 100;
+				// } else {
+				//     map<int, Vehicle>::iterator it = vehicles.begin();
+				//     while(it != vehicles.end()) {
+				//         int v_id = it->first;
+				//         Vehicle possible_car_detected = it->second;
+				//         if (possible_car_detected.lane == new_LANE) {
 
-				            // if using previous points can project s value out
-				            possible_car_detected.s += ((double)prev_size * DELTA_T * mph_to_mps(possible_car_detected.v));
+				//             // if using previous points can project s value out
+				//             possible_car_detected.s += ((double)prev_size * DELTA_T * mph_to_mps(possible_car_detected.v));
 
-				            cost_LEFT_lane += calculate_COST (possible_car_detected, ego, new_LANE, MAX_DIST, MAX_VEL);
-        				}
-        				it++;
-    				}
-    			}
-				cout << "cost_LEFT_lane: " << cost_LEFT_lane << endl;
+				//             cost_LEFT_lane += calculate_COST (possible_car_detected, ego, new_LANE, MAX_DIST, MAX_VEL);
+    //     				}
+    //     				it++;
+    // 				}
+    // 			}
+				// cout << "cost_LEFT_lane: " << cost_LEFT_lane << endl;
 
 // *******************************************
 // RIGHT LANE CHANGING
 // *******************************************
 				
-				new_LANE = ego.lane + 1;
-				Vehicle vehicle_on_right = Vehicle();
-				if (new_LANE > 2) {
-					change_RIGHT_lane = false;
-					cost_RIGHT_lane += 100;
-				} else {
-					bool is_car_on_right = ego.get_vehicle(vehicles, ego, new_LANE, prev_size, DELTA_T, MAX_DIST, vehicle_on_right);
+				// new_LANE = ego.lane + 1;
+				// Vehicle vehicle_on_right = Vehicle();
+				// if (new_LANE > 2) {
+				// 	change_RIGHT_lane = false;
+				// 	cost_RIGHT_lane += 100;
+				// } else {
+				// 	bool is_car_on_right = ego.get_vehicle(vehicles, ego, new_LANE, prev_size, DELTA_T, MAX_DIST, vehicle_on_right);
 			
-				    map<int, Vehicle>::iterator it = vehicles.begin();
-				    while(it != vehicles.end()) {
-				        int v_id = it->first;
-				        Vehicle possible_car_detected = it->second;
-				        if (possible_car_detected.lane == new_LANE) {
+				//     map<int, Vehicle>::iterator it = vehicles.begin();
+				//     while(it != vehicles.end()) {
+				//         int v_id = it->first;
+				//         Vehicle possible_car_detected = it->second;
+				//         if (possible_car_detected.lane == new_LANE) {
 
-				            // if using previous points can project s value out
-				            possible_car_detected.s += ((double)prev_size * DELTA_T * mph_to_mps(possible_car_detected.v));
+				//             // if using previous points can project s value out
+				//             possible_car_detected.s += ((double)prev_size * DELTA_T * mph_to_mps(possible_car_detected.v));
 
-				            cost_RIGHT_lane += calculate_COST (possible_car_detected, ego, new_LANE, MAX_DIST, MAX_VEL);
-        				}
-        				it++;
-    				}
-				}
-				cout << "cost_RIGHT_lane: " << cost_RIGHT_lane << endl;
+				//             cost_RIGHT_lane += calculate_COST (possible_car_detected, ego, new_LANE, MAX_DIST, MAX_VEL);
+    //     				}
+    //     				it++;
+    // 				}
+				// }
+				// cout << "cost_RIGHT_lane: " << cost_RIGHT_lane << endl;
 
 // *******************************************
 // LANE CHANGING DECISION MAKING
 // *******************************************
 				
-            	if (cost_LEFT_lane > cost_RIGHT_lane) {
-            		if (cost_KEEP_lane > cost_RIGHT_lane) {
-            			ego.lane += 1;
-						cout << "CHANGE RIGHT LANE\n";
-            		} else
-            			cout << "KEEP LANE\n";
-            	} else if (cost_KEEP_lane > cost_LEFT_lane) {
-            		ego.lane -= 1;
-            		cout << "CHANGE LEFT LANE\n";
-            	} else
-            		cout << "KEEP LANE\n";
-			}
+            	// if (cost_LEFT_lane > cost_RIGHT_lane) {
+            	// 	if (cost_KEEP_lane > cost_RIGHT_lane) {
+            	// 		ego.lane += 1;
+						// cout << "CHANGE RIGHT LANE\n";
+            		// } // else
+            			// cout << "KEEP LANE\n";
+            	// } else if (cost_KEEP_lane > cost_LEFT_lane) {
+            	// 	ego.lane -= 1;
+            		// cout << "CHANGE LEFT LANE\n";
+            	// } // else
+            		// cout << "KEEP LANE\n";
+			// }
 
-            if (too_close ) {
+   //          if (too_close ) {
             	// decrement to around 5 m/s2
-            	if (ego.v > vehicle_ahead.v)
-           			ego.v -= MAX_ACCEL;
-           		else
-           			ego.v = vehicle_ahead.v;
-            } 
-            else if (ego.v < MAX_VEL) {
-            	ego.v += MAX_ACCEL;
-            }
+            // 	if (ego.v > vehicle_ahead.v)
+           	// 		ego.v -= MAX_ACCEL;
+           	// 	else
+           	// 		ego.v = vehicle_ahead.v;
+            // } 
+            // else if (ego.v < MAX_VEL) {
+            // 	ego.v += MAX_ACCEL;
+            // }
+            // if (ego.v < MAX_VEL) 
+            // 	ego.v += ego.a;
+            // else
+            // 	ego.v -= ego.a;
 
 // *******************************************
 // TRAJECTORY
