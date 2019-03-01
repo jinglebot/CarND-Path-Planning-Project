@@ -228,17 +228,13 @@ string Vehicle::get_next_state(map<int, Vehicle> &vehicles, Vehicle &ego) {
         if (ego.lane != NUM_LANES - 1) {
             if (find(next_possible_states.begin(), next_possible_states.end(), "PCLR") != next_possible_states.end()) {
                 state = "PCLR";                            
-            } else {
-                cout << "Lane is not in next_possible_states " << endl;
-            }
+            } 
         }
     } else if (next_lane - ego.lane == -1) {
         if (ego.lane != 0) {
             if (find(next_possible_states.begin(), next_possible_states.end(), "PCLL") != next_possible_states.end()) {
                 state = "PCLL";
-            } else {
-                cout << "Lane is not in next_possible_states " << endl;
-            }
+            } 
         }
     } else {
         state = "KL"; 
@@ -274,7 +270,7 @@ void Vehicle::implement_trajectory(map<int, Vehicle> &vehicles, Vehicle &ego, st
 //                     ego.v -= ego.a;
 //                 ego.lane -= 1;
                 cout << "Now state: " << poss_states[1] << endl;
-                implement_trajectory_KL(vehicles, ego);
+                implement_trajectory_PCLL(vehicles, ego);
                 break;
             case 2 :
 //                 ego.lane -= 1;
@@ -283,7 +279,7 @@ void Vehicle::implement_trajectory(map<int, Vehicle> &vehicles, Vehicle &ego, st
 //                 else
 //                     ego.v -= ego.a;
                 cout << "Now state: " << poss_states[2] << endl;
-                implement_trajectory_KL(vehicles, ego);
+                implement_trajectory_CLL(vehicles, ego);
                 break;
             case 3 :
 //                 if (ego.v < MAX_VEL) 
@@ -292,7 +288,7 @@ void Vehicle::implement_trajectory(map<int, Vehicle> &vehicles, Vehicle &ego, st
 //                     ego.v -= ego.a;
 //                 ego.lane += 1;
                 cout << "Now state: " << poss_states[3] << endl;
-                implement_trajectory_KL(vehicles, ego);
+                implement_trajectory_PCLR(vehicles, ego);
                 break;
             case 4 :
 //                 if (ego.v < MAX_VEL) 
@@ -302,7 +298,7 @@ void Vehicle::implement_trajectory(map<int, Vehicle> &vehicles, Vehicle &ego, st
 //                 cout << "Now state: " << poss_states[4] << endl;
 //                 ego.lane += 1;
                 cout << "Now state: " << poss_states[4] << endl;
-                implement_trajectory_KL(vehicles, ego);
+                implement_trajectory_CLR(vehicles, ego);
                 break;
             default:
 //                 if (ego.v < MAX_VEL) 
@@ -322,22 +318,54 @@ void Vehicle::implement_trajectory_KL(map<int, Vehicle> &vehicles, Vehicle &ego)
     double v_id = ego.lane_nearest_cars_ahead[ego.lane];
     // If there is a car in front
     if (v_id != -1) {
+        // Calculate where ego car should be behind car ahead
         double s_car_ahead = vehicles[v_id].s;
         double next_s = s_car_ahead - DIST_BUFFER;
         cout << next_s << endl;
-
-
+        
+        // Calculate ego car speed behind car ahead
+        double v_car_ahead = vehicles[v_id].v;
+        
+        // Calculate distance to be maintained by ego car while driving behind car ahead
+        double delta_s = next s - ego.s;
+        double delta_v = v_car_ahead - ego.v;
+        double delta_t = delta_s / delta_v;
+        ego.a = delta_v / delta_t;        
+    } 
         if (ego.v < MAX_VEL) 
             ego.v += ego.a;
         else
             ego.v -= ego.a;
-    } 
 }
 
-void Vehicle::implement_trajectory_PCLL(map<int, Vehicle> &vehicles, Vehicle &ego) {}
-void Vehicle::implement_trajectory_CLL(map<int, Vehicle> &vehicles, Vehicle &ego) {}
-void Vehicle::implement_trajectory_PCLR(map<int, Vehicle> &vehicles, Vehicle &ego) {}
-void Vehicle::implement_trajectory_CLR(map<int, Vehicle> &vehicles, Vehicle &ego) {}
+void Vehicle::implement_trajectory_PCLL(map<int, Vehicle> &vehicles, Vehicle &ego) {
+    ego.lane -= 1;
+        if (ego.v < MAX_VEL) 
+            ego.v += ego.a;
+        else
+            ego.v -= ego.a;
+}
+void Vehicle::implement_trajectory_CLL(map<int, Vehicle> &vehicles, Vehicle &ego) {
+    ego.lane -= 1;
+        if (ego.v < MAX_VEL) 
+            ego.v += ego.a;
+        else
+            ego.v -= ego.a;
+}
+void Vehicle::implement_trajectory_PCLR(map<int, Vehicle> &vehicles, Vehicle &ego) {
+    ego.lane += 1;
+        if (ego.v < MAX_VEL) 
+            ego.v += ego.a;
+        else
+            ego.v -= ego.a;
+}
+void Vehicle::implement_trajectory_CLR(map<int, Vehicle> &vehicles, Vehicle &ego) {
+    ego.lane += 1;
+        if (ego.v < MAX_VEL) 
+            ego.v += ego.a;
+        else
+            ego.v -= ego.a;
+}
 
 
 // =========================================================================
