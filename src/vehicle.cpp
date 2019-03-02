@@ -226,14 +226,22 @@ string Vehicle::get_next_state(map<int, Vehicle> &vehicles, Vehicle &ego) {
     cout << "Current lane:\t" << ego.lane << endl;
     if (next_lane - ego.lane == 1) {
         if (ego.lane != NUM_LANES - 1) {
-            if (find(next_possible_states.begin(), next_possible_states.end(), "PCLR") != next_possible_states.end()) {
-                state = "PCLR";                            
-            } 
+            if (find(next_possible_states.begin(), next_possible_states.end(), "PCLR") != next_possible_states.end() && find(next_possible_states.begin(), next_possible_states.end(), "CLR") != next_possible_states.end()) {
+                if (lane_nearest_cars_ahead[next_lane].v - ego.v < 0.5) {
+                    state = "CLR"
+                } else {
+                    state = "PCLR";
+                }
+            }
         }
     } else if (next_lane - ego.lane == -1) {
         if (ego.lane != 0) {
-            if (find(next_possible_states.begin(), next_possible_states.end(), "PCLL") != next_possible_states.end()) {
-                state = "PCLL";
+            if (find(next_possible_states.begin(), next_possible_states.end(), "PCLL") != next_possible_states.end() && find(next_possible_states.begin(), next_possible_states.end(), "CLL") != next_possible_states.end()) {
+                if (lane_nearest_cars_ahead[next_lane].v - ego.v < 0.5) {
+                    state = "CLL"
+                } else {
+                    state = "PCLL";
+                }
             } 
         }
     } else {
@@ -323,22 +331,56 @@ void Vehicle::implement_trajectory_KL(map<int, Vehicle> &vehicles, Vehicle &ego)
         double next_s = s_car_ahead - DIST_BUFFER;
         cout << next_s << endl;
         
-        // Calculate ego car speed behind car ahead
+        // Calculate what ego car speed should be behind car ahead
         double v_car_ahead = vehicles[v_id].v;
         
         // Calculate distance to be maintained by ego car while driving behind car ahead
         double delta_s = next s - ego.s;
         double delta_v = v_car_ahead - ego.v;
         double delta_t = delta_s / delta_v;
-        ego.a = delta_v / delta_t;        
-    } 
-        if (ego.v < MAX_VEL) 
-            ego.v += ego.a;
-        else
-            ego.v -= ego.a;
+        int N = delta_t / DT;
+        ego.a * N = delta_v / delta_t;
+        
+    // If there is no car in front
+    } else {
+        ego.a = MAX_ACCEL;
+    }
+    
+    if (ego.v < MAX_VEL) 
+        ego.v += ego.a;
+    else
+        ego.v -= ego.a;
 }
 
 void Vehicle::implement_trajectory_PCLL(map<int, Vehicle> &vehicles, Vehicle &ego) {
+    int next_lane = ego.lane - 1;
+    double v_id = ego.lane_nearest_cars_ahead[next_lane];
+    // If there is a car in front
+    if (v_id != -1) {
+        // Calculate where ego car should be behind car ahead
+        double s_car_ahead = vehicles[v_id].s;
+        double next_s = s_car_ahead - DIST_BUFFER;
+        cout << next_s << endl;
+ 
+        double next_d = next_lane * 4 + 2;
+        cout << next_d << endl;
+        
+        // Calculate what ego car speed should be behind car ahead
+        double v_car_ahead = vehicles[v_id].v;
+        vx s
+        vy d
+        // Calculate distance to be maintained by ego car while driving behind car ahead
+        double delta_s = next s - ego.s;
+        double delta_v = v_car_ahead - ego.v;
+        double delta_t = delta_s / delta_v;
+        int N = delta_t / DT;
+        ego.a * N = delta_v / delta_t;
+        
+    // If there is no car in front
+    } else {
+        ego.a = MAX_ACCEL;
+    }
+    
     ego.lane -= 1;
         if (ego.v < MAX_VEL) 
             ego.v += ego.a;
