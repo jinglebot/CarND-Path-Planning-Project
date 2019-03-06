@@ -49,12 +49,16 @@ public:
 
   void see_vehicles(map<int, Vehicle> &vehicles, Vehicle &ego);
  
-  void see_cars(map<int, Vehicle> &vehicles, map<int, Vehicle> &cars);
+  void see_cars_ahead(map<int, Vehicle> &vehicles, map<int, Vehicle> &cars);
+
+  void see_cars_behind(map<int, Vehicle> &vehicles, map<int, Vehicle> &cars);
 
 
   void transition_function(map<int, Vehicle> &vehicles, Vehicle &ego);
 
   void get_sensor_config(map<int, Vehicle> &vehicles, Vehicle &ego);
+
+  double get_future_car_position(double car_v, double car_s);
 
 
   vector <int> lane_nearest_cars(map<int, Vehicle> &vehicles, map<int, Vehicle> &cars, Vehicle &ego);
@@ -67,6 +71,15 @@ public:
   void implement_trajectory(map<int, Vehicle> &vehicles, Vehicle &ego, string state);
 
   void implement_trajectory_KL(map<int, Vehicle> &vehicles, Vehicle &ego);
+  
+  void implement_trajectory_PCLL(map<int, Vehicle> &vehicles, Vehicle &ego);
+  
+  void implement_trajectory_CLL(map<int, Vehicle> &vehicles, Vehicle &ego);
+  
+  void implement_trajectory_PCLR(map<int, Vehicle> &vehicles, Vehicle &ego);
+  
+  void implement_trajectory_CLR(map<int, Vehicle> &vehicles, Vehicle &ego);
+
 };
 
 #endif

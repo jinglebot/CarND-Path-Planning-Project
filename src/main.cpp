@@ -18,242 +18,6 @@ using namespace std;
 // for convenience
 using json = nlohmann::json;
 
-// // For converting back and forth between radians and degrees.
-// constexpr double pi() { return M_PI; }
-// double deg2rad(double x) { return x * pi() / 180; }
-// double rad2deg(double x) { return x * 180 / pi(); }
-
-// // Checks if the SocketIO event has JSON data.
-// // If there is data the JSON object in string format will be returned,
-// // else the empty string "" will be returned.
-// string hasData(string s) 
-// {
-
-//   auto found_null = s.find("null");
-//   auto b1 = s.find_first_of("[");
-//   auto b2 = s.find_first_of("}");
-//   if (found_null != string::npos) {
-//     return "";
-//   } else if (b1 != string::npos && b2 != string::npos) {
-//     return s.substr(b1, b2 - b1 + 2);
-//   }
-//   return "";
-// }
-
-// double distance(double x1, double y1, double x2, double y2)
-// {
-//   return sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
-// }
-
-// int ClosestWaypoint(double x, double y, const vector<double> &maps_x, const vector<double> &maps_y)
-// {
-
-// 	double closestLen = 100000; //large number
-// 	int closestWaypoint = 0;
-
-// 	for(int i = 0; i < maps_x.size(); i++)
-// 	{
-// 		double map_x = maps_x[i];
-// 		double map_y = maps_y[i];
-// 		double dist = distance(x,y,map_x,map_y);
-// 		if(dist < closestLen)
-// 		{
-// 			closestLen = dist;
-// 			closestWaypoint = i;
-// 		}
-
-// 	}
-
-// 	return closestWaypoint;
-
-// }
-
-// int NextWaypoint(double x, double y, double theta, const vector<double> &maps_x, const vector<double> &maps_y)
-// {
-
-// 	int closestWaypoint = ClosestWaypoint(x,y,maps_x,maps_y);
-
-// 	double map_x = maps_x[closestWaypoint];
-// 	double map_y = maps_y[closestWaypoint];
-
-// 	double heading = atan2((map_y-y),(map_x-x));
-
-// 	double angle = fabs(theta-heading);
-// 	angle = min(2*pi() - angle, angle);
-
-// 	if(angle > pi()/4)
-// 	{
-// 		closestWaypoint++;
-// 		if (closestWaypoint == maps_x.size())
-// 		{
-// 			closestWaypoint = 0;
-// 		}
-// 	}
-
-// 	return closestWaypoint;
-// }
-
-// // Transform from Cartesian x,y coordinates to Frenet s,d coordinates
-// vector<double> getFrenet(double x, double y, double theta, const vector<double> &maps_x, const vector<double> &maps_y)
-// {
-
-// 	int next_wp = NextWaypoint(x,y, theta, maps_x,maps_y);
-
-// 	int prev_wp;
-// 	prev_wp = next_wp-1;
-// 	if(next_wp == 0)
-// 	{
-// 		prev_wp  = maps_x.size()-1;
-// 	}
-
-// 	double n_x = maps_x[next_wp]-maps_x[prev_wp];
-// 	double n_y = maps_y[next_wp]-maps_y[prev_wp];
-// 	double x_x = x - maps_x[prev_wp];
-// 	double x_y = y - maps_y[prev_wp];
-
-// 	// find the projection of x onto n
-// 	double proj_norm = (x_x*n_x+x_y*n_y)/(n_x*n_x+n_y*n_y);
-// 	double proj_x = proj_norm*n_x;
-// 	double proj_y = proj_norm*n_y;
-
-// 	double frenet_d = distance(x_x,x_y,proj_x,proj_y);
-
-// 	//see if d value is positive or negative by comparing it to a center point
-
-// 	double center_x = 1000-maps_x[prev_wp];
-// 	double center_y = 2000-maps_y[prev_wp];
-// 	double centerToPos = distance(center_x,center_y,x_x,x_y);
-// 	double centerToRef = distance(center_x,center_y,proj_x,proj_y);
-
-// 	if(centerToPos <= centerToRef)
-// 	{
-// 		frenet_d *= -1;
-// 	}
-
-// 	// calculate s value
-// 	double frenet_s = 0;
-// 	for(int i = 0; i < prev_wp; i++)
-// 	{
-// 		frenet_s += distance(maps_x[i],maps_y[i],maps_x[i+1],maps_y[i+1]);
-// 	}
-
-// 	frenet_s += distance(0,0,proj_x,proj_y);
-
-// 	return {frenet_s,frenet_d};
-
-// }
-
-// // Transform from Frenet s,d coordinates to Cartesian x,y
-// vector<double> getXY(double s, double d, const vector<double> &maps_s, const vector<double> &maps_x, const vector<double> &maps_y)
-// {
-
-// 	int prev_wp = -1;
-
-// 	while(s > maps_s[prev_wp+1] && (prev_wp < (int)(maps_s.size()-1) ))
-// 	{
-// 		prev_wp++;
-// 	}
-
-// 	int wp2 = (prev_wp+1)%maps_x.size();
-
-// 	double heading = atan2((maps_y[wp2]-maps_y[prev_wp]),(maps_x[wp2]-maps_x[prev_wp]));
-// 	// the x,y,s along the segment
-// 	double seg_s = (s-maps_s[prev_wp]);
-
-// 	double seg_x = maps_x[prev_wp]+seg_s*cos(heading);
-// 	double seg_y = maps_y[prev_wp]+seg_s*sin(heading);
-
-// 	double perp_heading = heading-pi()/2;
-
-// 	double x = seg_x + d*cos(perp_heading);
-// 	double y = seg_y + d*sin(perp_heading);
-
-// 	return {x,y};
-
-// }
-
-// // *******************************************
-// // LANE CHANGE
-// // *******************************************
-
-// int car_is_in_lane(int d) {
-
-//  	if (d < 4 && d > 0 ) {
-// 		return 0;
-// 	} else if (d < 8 && d >= 4 ) {
-// 		return 1;
-// 	} else if (d < 12 && d >= 8 ) {
-// 		return 2;
-// 	}
-// 	return 0;
-
-// }
-
-// double get_v (double vx, double vy) 
-// {
-
-// 	return sqrt(vx * vx + vy * vy);
-
-// }
-
-// double mph_to_mps(double v) 
-// {
-
-// 	return v * 0.44704;
-
-// }
-
-// *******************************************
-// COST FUNCTION
-// *******************************************
-
-
-// double calculate_COST (Vehicle &possible_car_detected, Vehicle &ego, int new_LANE, double MAX_DIST, double MAX_VEL) 
-// {
-
-//     double stop_cost = 10.00;
-//     double cost = 0.00;
-
-//     // if slow vehicle is ahead of lane change gap
-//     if ((possible_car_detected.s > ego.s) && ((possible_car_detected.s - ego.s) < MAX_DIST)) 
-//     {
-
-//     	// if it's fast, there's a low cost
-// 	    // if it's slow, there's a great cost
-//          if (possible_car_detected.v < ego.v) 
-//         {
-        
-//             cost += stop_cost * (ego.v - possible_car_detected.v) / possible_car_detected.v;                   
-        
-//         }
-//     }
-
-//     // if vehicle is within lane change gap
-//     if ((fabs(possible_car_detected.s - ego.s) <= (MAX_DIST * 2)) && (new_LANE != ego.lane)) 
-//     {
-    
-
-//         cost += stop_cost;
-    
-//     }
-
-//     // if fast vehicle is behind lane change gap
-//  	if ((possible_car_detected.s < ego.s) && ((ego.s - possible_car_detected.s) < (MAX_DIST * 2))) 
-// 	{
-       
-//        if (possible_car_detected.v > ego.v) 
-//        {
-       
-//             cost += stop_cost * (possible_car_detected.v - ego.v) / ego.v;                          	
-       
-//        }
-
-// 	}
-    
-//     // cost == 0 if there is no car in new lane or if car ahead in new lane is fast or car behind in new lane is slow
-
-// 	return cost;
-// }
 						
 int main() {
 
@@ -314,7 +78,7 @@ int main() {
         
         if (event == "telemetry") {
           // j[1] is the data JSON object
-          
+
         	// Main car's localization Data
           	double car_x = j[1]["x"];
           	double car_y = j[1]["y"];
@@ -342,12 +106,26 @@ int main() {
 // START OF TODO LIST
 // *******************************************
          
+// *******************************************
+// EGO VEHICLE
+// *******************************************
+			// if (prev_size > 0) 
+			// {
+			// 	ego.s = end_path_s;
+   //          }
+
             int prev_size = previous_path_x.size();
 			
 			ego.s = car_s; 
 			ego.d = car_d; 
+			// ego.v = car_speed; 
 			ego.lane = car_is_in_lane(car_d);
 			
+			// if (prev_size > 0) 
+			// {
+			// 	ego.s = end_path_s;
+   //          }
+
             // bool too_close = false;
             // bool change_LANE = false;
 
@@ -368,25 +146,18 @@ int main() {
 				double vehicle_d = sensor_fusion[i][6];
 				int vehicle_lane = car_is_in_lane(vehicle_d);
 
-				Vehicle vehicle = Vehicle(vehicle_lane, vehicle_s, vehicle_v, vehicle_d);
+				Vehicle vehicle = Vehicle(vehicle_lane, vehicle_s, mps_to_mph(vehicle_v), vehicle_d);
               	vehicles[v_id] = vehicle;
 			}
 
 			// Vehicles default
-			Vehicle vehicle = Vehicle(1, 500, MAX_VEL, 6);
-			vehicles[-1] = vehicle;
+			// Vehicle vehicle = Vehicle(1, 500, MAX_VEL, 6);
+			// vehicles[-1] = vehicle;
 
 			// Vehicles visualization
 			ego.see_vehicles(vehicles, ego);
 			ego.transition_function(vehicles, ego);
 			
-// *******************************************
-// EGO VEHICLE
-// *******************************************
-			// if (prev_size > 0) 
-			// {
-			// 	ego.s = end_path_s;
-   //          }
 
 			// Find and complete and optimal motion planning system.
 			// Ego trajectory starts on finding out whether there is an obstacle ahead of it.
@@ -413,69 +184,6 @@ int main() {
 			
 			// 	double cost_LEFT_lane = 0.00;
 			// 	double cost_RIGHT_lane = 0.00;
-
-// *******************************************
-// LEFT LANE CHANGING
-// *******************************************
-				
-				// Situation 1: If lane is already the innermost lane, no changing of lanes will occur.
-				// Situation 2: If there is a vehicle within the lane changing space of 30m ahead as well as behind the ego car, no changing of lanes can occur.
-				// Situation 3: If there is a vehicle ahead of the lane changing space and faster than ego car, changing of lanes can occur.
-				// Situation 4: If there is a vehicle behind the lane changing space and faster than ego car, changing of lanes cost will be evaluated.
-				// Situation 5: If there is a vehicle ahead of the lane changing space and slower than ego car, changing of lanes cost will be evaluated.
-				// Situation 6: If there is a vehicle behind the lane changing space and slower than ego car, changing of lanes can occur.
-				// Situation 7: If there is no vehicle in the new lane, changing of lanes cost will occur.
-				// Situation 8: Default ego car situation, no changing of lanes will occur.
-
-				// int new_LANE = ego.lane - 1;
-				
-				// if ( new_LANE < 0) {
-				// 	change_LEFT_lane = false;
-				// 	cost_LEFT_lane += 100;
-				// } else {
-				//     map<int, Vehicle>::iterator it = vehicles.begin();
-				//     while(it != vehicles.end()) {
-				//         int v_id = it->first;
-				//         Vehicle possible_car_detected = it->second;
-				//         if (possible_car_detected.lane == new_LANE) {
-
-				//             // if using previous points can project s value out
-				//             possible_car_detected.s += ((double)prev_size * DELTA_T * mph_to_mps(possible_car_detected.v));
-
-				//             cost_LEFT_lane += calculate_COST (possible_car_detected, ego, new_LANE, MAX_DIST, MAX_VEL);
-    //     				}
-    //     				it++;
-    // 				}
-    // 			}
-				// cout << "cost_LEFT_lane: " << cost_LEFT_lane << endl;
-
-// *******************************************
-// RIGHT LANE CHANGING
-// *******************************************
-				
-				// new_LANE = ego.lane + 1;
-				// Vehicle vehicle_on_right = Vehicle();
-				// if (new_LANE > 2) {
-				// 	change_RIGHT_lane = false;
-				// 	cost_RIGHT_lane += 100;
-				// } else {
-				// 	bool is_car_on_right = ego.get_vehicle(vehicles, ego, new_LANE, prev_size, DELTA_T, MAX_DIST, vehicle_on_right);
-			
-				//     map<int, Vehicle>::iterator it = vehicles.begin();
-				//     while(it != vehicles.end()) {
-				//         int v_id = it->first;
-				//         Vehicle possible_car_detected = it->second;
-				//         if (possible_car_detected.lane == new_LANE) {
-
-				//             // if using previous points can project s value out
-				//             possible_car_detected.s += ((double)prev_size * DELTA_T * mph_to_mps(possible_car_detected.v));
-
-				//             cost_RIGHT_lane += calculate_COST (possible_car_detected, ego, new_LANE, MAX_DIST, MAX_VEL);
-    //     				}
-    //     				it++;
-    // 				}
-				// }
-				// cout << "cost_RIGHT_lane: " << cost_RIGHT_lane << endl;
 
 // *******************************************
 // LANE CHANGING DECISION MAKING
@@ -588,8 +296,6 @@ int main() {
               	  next_x_vals.push_back(previous_path_x[i]);
                   next_y_vals.push_back(previous_path_y[i]);
             }
-            // return {next_x_vals, next_y_vals};
-            // cout << "previous_path_x size: " << previous_path_x.size() << endl;
           
           	// Calculate how to break up spline points so that we travel at our desired reference velocity
           	double target_x = 30.0; // in meters of spaced points

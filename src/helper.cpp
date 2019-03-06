@@ -6,19 +6,23 @@
 using namespace std;
 
 
-extern const double MAX_ACCEL = 0.224; // == 5 m/s^2
+extern const double MAX_ACCEL = 0.22; // == 5 m/s^2
 
 extern const int NUM_LANES = 3;
 
-extern const double MAX_DIST = 50; // meters
+extern const double MAX_DIST = 150; // meters
 
-extern const double MAX_VEL = 49.0; // mph
+extern const double MAX_VEL = 48.0; // mph
 
 extern const double SPEED_LIMIT = 50.0;
 
 extern const double STOP_COST = 0.8;
 
-extern const double DIST_BUFFER = 30;
+extern const double DIST_BUFFER = 20;
+
+extern const double D_TIME = 0.02;
+
+extern const double MIN_TIME_LANE_CHANGE = 3.0;
 
 // For converting back and forth between radians and degrees.
 constexpr double pi() { return M_PI; }
@@ -193,6 +197,13 @@ double get_v (double vx, double vy)
 {
 
 	return sqrt(vx * vx + vy * vy);
+
+}
+
+double mps_to_mph(double v) 
+{
+
+	return v / 0.44704;
 
 }
 

@@ -24,6 +24,10 @@ extern const double STOP_COST;
 
 extern const double DIST_BUFFER;
 
+extern const double D_TIME;
+
+extern const double MIN_TIME_LANE_CHANGE;
+
 // For converting back and forth between radians and degrees.
 constexpr double pi();
 
@@ -52,7 +56,9 @@ int car_is_in_lane(int d);
 
 double get_v (double vx, double vy);
 
-double mph_to_mps(double v); 
+double mps_to_mph(double v); 
+
+double mph_to_mps(double v);
 
 
 #endif
