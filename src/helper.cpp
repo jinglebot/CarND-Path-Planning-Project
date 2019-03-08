@@ -12,13 +12,15 @@ extern const int NUM_LANES = 3;
 
 extern const double MAX_DIST = 150; // meters
 
-extern const double MAX_VEL = 48.0; // mph
+extern const double MAX_VEL = 45.0; // mph
 
 extern const double SPEED_LIMIT = 50.0;
 
 extern const double STOP_COST = 0.8;
 
-extern const double DIST_BUFFER = 20;
+extern const double DIST_BUFFER = 50;
+
+extern const double LANE_CHANGE_BUFFER_AHEAD = 100;
 
 extern const double D_TIME = 0.02;
 

@@ -24,6 +24,8 @@ extern const double STOP_COST;
 
 extern const double DIST_BUFFER;
 
+extern const double LANE_CHANGE_BUFFER_AHEAD;
+
 extern const double D_TIME;
 
 extern const double MIN_TIME_LANE_CHANGE;
