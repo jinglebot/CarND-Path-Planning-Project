@@ -546,16 +546,23 @@ void Vehicle::implement_trajectory_KL(map<int, Vehicle> &vehicles, Vehicle &ego)
     }
 }
 
-
+// Preparation done for lane change is
+// if car reaches s where DIST_BUFFER and LANE_CHANGE_BUFFER_AHEAD requirements 
+// are met, then it can change lane
+// To prepare, ego car must reach starting position and velocity
 void Vehicle::implement_trajectory_PCLL(map<int, Vehicle> &vehicles, Vehicle &ego) {
     int next_lane = ego.lane - 1;
+    
+    // Position of car ahead in current lane
+    // To safely do lane transition, ego car will still need to
+    // stay behind the car ahead in the current lane
     double v_id_ahead = this->lane_nearest_cars_ahead[ego.lane];
     double s_car_ahead = vehicles[v_id_ahead].s;
     double next_s_ahead = s_car_ahead - DIST_BUFFER;
     double v_car_ahead = vehicles[v_id_ahead].v;
 
-    
-    // Calculate distance ego car should be behind car in next lane
+    // Target position
+    // Calculate distance ego car should be behind car in next lane.
     // If there is a car in the next lane, this would be the configuration.
     // If there is no car, this would reflect the parameter limits.
     double v_id_next_lane = this->lane_nearest_cars_ahead[next_lane];
@@ -563,13 +570,8 @@ void Vehicle::implement_trajectory_PCLL(map<int, Vehicle> &vehicles, Vehicle &eg
     double next_s_next_lane = s_car_next_lane - DIST_BUFFER;
     double v_car_next_lane = vehicles[v_id_ahead].v;
 
-
-    // double next_s = min(next_s_ahead, next_s_next_lane);
-    // if ( (next_s - ego.s) < 1) {
-    //     ego.state = "CLL";
-    // }
-
-    // If there is a car in front
+    // If there is a car in front in the next lane
+    // Ego car's target position will be 20 meters behind it.
     if (v_id_ahead != -1) {
     
         // Calculate distance and velocity to be maintained by ego car while driving behind car ahead
@@ -577,18 +579,29 @@ void Vehicle::implement_trajectory_PCLL(map<int, Vehicle> &vehicles, Vehicle &eg
         double delta_s = s_car_next_lane - ego.s;
         cout << "delta_s: " << delta_s << endl;
 
+        // Using the formula for motion S = delta_V / delta_T, 
+        // solve for the delta_T == time it takes to travel from current position
+        // to position in target lane
         double delta_t = fabs(delta_s / delta_v);
         cout << "delta_t: " << delta_t << endl;
 
+        // Now that you have delta_t, solve for a
+        // from start to goal
         // int N = fabs(delta_t / D_TIME);
         double a = fabs(delta_v) / delta_t;
        
+        // Set a limits
         if (fabs(a) > MAX_ACCEL) 
             ego.a = MAX_ACCEL;
         else 
             ego.a = a;
 
-        if ( ( (next_s_next_lane - ego.s) > LANE_CHANGE_BUFFER_AHEAD) && (next_s_ahead > ego.s ) && (ego.v < MAX_VEL) )
+        // If ego car distance from goal is > minimum buffer distance to change lane and and
+        // ego is still behind the car ahead in the current lane
+        // and ego's v is below optimal vel, then it can still speed up
+        // else ego car slows down if its vel is higher than the car ahead
+        // TODO: include position and vel of car behind
+        if ( ( (next_s_next_lane - ego.s) > LANE_CHANGE_BUFFER_AHEAD) && (next_s_ahead > ego.s ) && (ego.v < v_car_ahead) )
             ego.v += ego.a;
         else if (ego.v > v_car_ahead) 
             ego.v -= ego.a;
@@ -603,6 +616,15 @@ void Vehicle::implement_trajectory_PCLL(map<int, Vehicle> &vehicles, Vehicle &eg
         else ego.v = MAX_VEL;
     }
 
+    // double next_s = min(next_s_ahead, next_s_next_lane);
+    // if ( (next_s - ego.s) < 1) {
+    // If ego car and car ahead are almost the same vel (=/- 0.5 mph) and
+    // next_s_next_lane - ego.s > minimum buffer distance and
+    // ego is still a distance behind the car ahead in the current lane
+    // then it's safe to change lane
+    if ( (fabs(ego.v - v_car_ahead) < 0.5) && ( (next_s_next_lane - ego.s) > LANE_CHANGE_BUFFER_AHEAD) && (next_s_ahead > ego.s ) )
+        ego.state = "CLL";
+    
 }
 
 
@@ -663,7 +685,12 @@ void Vehicle::implement_trajectory_PCLR(map<int, Vehicle> &vehicles, Vehicle &eg
 }
 
 
-
+// Three Limits:
+// V should be <= to vel of car ahead in next lane, 
+// S should be behind car in next lane and to land in center of next lane
+// T should not be > 3 secs
+// A should not be > 5 mpss
+// all of which should not trigger each other to go beyond their limits
 void Vehicle::implement_trajectory_CLL(map<int, Vehicle> &vehicles, Vehicle &ego) {
     int next_lane = ego.lane - 1;
 /*
@@ -672,13 +699,13 @@ void Vehicle::implement_trajectory_CLL(map<int, Vehicle> &vehicles, Vehicle &ego
     double s_car_ahead = vehicles[v_id_ahead].s;
     double next_s_ahead = s_car_ahead - DIST_BUFFER;
     // cout << "next_s: " << next_s << endl;
-
+*/
     // Calculate distance ego car should be behind car in next lane
     double v_id_next_lane = this->lane_nearest_cars_ahead[next_lane];
     double s_car_next_lane = vehicles[v_id_next_lane].s;
     double next_s_next_lane = s_car_next_lane - DIST_BUFFER;
     // cout << "next_s: " << next_s << endl;
-
+/*
     // Calculate which lane ego car should be behind car ahead
     // cout << "initial d: " << ego.d << endl;
     // cout << "initial lane: " << ego.lane << endl;
@@ -690,23 +717,48 @@ void Vehicle::implement_trajectory_CLL(map<int, Vehicle> &vehicles, Vehicle &ego
 
 //     // double v_final = MAX_ACCEL * MIN_TIME_LANE_CHANGE + ego.v;
 //     // cout << "target vel limit: " << v_final << endl;
-
+*/
     // If there is a car in front
     if (v_id_next_lane != -1) {
+        
+        double delta_s = s_car_next_lane - ego.s;
+        cout << "delta_s: " << delta_s << endl;
 
         double v_car_next_lane = vehicles[v_id_next_lane].v;
         double delta_v = mph_to_mps(v_car_next_lane - ego.v);
-        double delta_t = MIN_TIME_LANE_CHANGE;
+        
+        double delta_t = fabs(delta_s / delta_v);
+        cout << "delta_t: " << delta_t << endl;
+
         double a = fabs(delta_v) / delta_t;
 
-        if (fabs(a) > MAX_ACCEL) 
+        // Set delta_t < 3 secs limits
+        if (delta_t > MIN_TIME_LANE_CHANGE) {
+            delta_t = MIN_TIME_LANE_CHANGE;
+            // Changing delta_t won't get ego car to the target position
+            // Solve for the target position for this delta_t
+            delta_s = delta_v * delta_t;
+            // Solve next s
+            // Will s cause jerk?
+            // Will ego reach next lane's center?
+        }
+ 
+        // Set a limits
+        if (fabs(a) > MAX_ACCEL) {
             a = MAX_ACCEL;
+            // Changing a won't get ego car to the target position
+            // Solve for the target position for this a
+            // S = Vo * t + 0.5 * a * t * t
+            delta_s = mph_to_mps(ego.v) * delta_t + 0.5 * a * delta_t * delta_t;
+            // Solve next s
+            // Will s cause jerk?
+            // Will ego reach next lane's center?
+        }
 
-        // Find the minimum delta_s to change lane within 3 secs
-        // S = Vo * t + 0.5 * a * t * t
-        double delta_s = mph_to_mps(ego.v) * delta_t + 0.5 * a * delta_t * delta_t;
-        double s_limit = next_s_ahead - delta_s;
-        double s_space = ego.s + delta_s;
+// ===========================================================
+// ===========================================================
+        
+        
         int N = delta_t / D_TIME;
 
         if ( (ego.s < s_limit) || (next_s_ahead > s_space) ) {
@@ -728,7 +780,7 @@ void Vehicle::implement_trajectory_CLL(map<int, Vehicle> &vehicles, Vehicle &ego
             ego.v += ego.a;
         else
             ego.v -= ego.a;
-    } */
+    } 
 }
 
 
