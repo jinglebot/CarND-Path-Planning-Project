@@ -16,8 +16,9 @@ At first, I tried using the Udacity Workspace for this project. I had to drop it
 ### Project Progression
 I followed the Project Q&A to start and was able to get it to drive straight on the road. Then, I tried implementing additional codes for slowing down, keeping within the lane, changing left and right by adding the **classifier class** and the **vehicle class** from the 'classroom'. Unfortunately, things didn't work out as it should. I had the presumption that we were supposed to use everything that has been discussed in the lessons but from the way the Q&A started off the project, it was more like a DIY, include only what you need from the lessons. I decided to drop the **FSM** but kept the 'cost function'. I also dropped the classifier class for predictions when my car was already getting the needed requirements as stated in the rubric.
 
-### To Do
-For me, this project still needs further improvement which I plan to follow up after submission when there are no more time constraints from due dates. There are a lot of areas to cover and a lot of optimize. It is not yet a done deal.
+### Refactoring main.cpp
+After months of editing, I have decided to stick to keeping it simple. I dropped the cost function, the vehicle class and even the added file of constants and helper functions. Sticking to the basic and taking a leap of faith that the vehicle will be able to maneuver as long as the spline has the correct calculation, my final draft focused only on the cars ahead and the ego car parameters. So far, it has done better than my previous work.
+
 
 ![Sample Image 1][image1]
 
